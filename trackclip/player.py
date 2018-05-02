@@ -1,8 +1,9 @@
-from cv2.cv2 import VideoCapture, imshow, waitKey, rectangle, Tracker, TrackerKCF_create, TickMeter, putText, \
-    FONT_HERSHEY_SIMPLEX, VideoWriter, VideoWriter_fourcc, CAP_PROP_FPS
-from numpy import copy
+from cv2.cv2 import VideoCapture, imshow, waitKey, Tracker, TickMeter, VideoWriter, VideoWriter_fourcc, CAP_PROP_FPS
 
+from trackclip.hud import HUD
+from trackclip.player_state import PlayerState
 from trackclip.selector import Selector
+from trackclip.tracking_object import TrackingObject
 
 
 class Player:
@@ -16,6 +17,9 @@ class Player:
         self.output_filename = output_filename
         self.window_name = window_name
 
+        self.state = PlayerState()
+        self.hud = HUD(self.state)
+
         self.writer = None
         if self.output_filename:
             codec = VideoWriter_fourcc(*(codec or 'XVID'))
@@ -25,81 +29,68 @@ class Player:
         if not self.capture.isOpened():
             raise Exception("The capture could not be opened")
 
-        ok, self.org_frame = self.capture.read()
+        ok, self.frame = self.capture.read()
         if not ok:
             raise Exception("The capture could not be read")
 
-        self.fps = self.capture.get(CAP_PROP_FPS) or 60
+        self.state.target_fps = self.state.original_fps = self.capture.get(CAP_PROP_FPS)
 
-        imshow(self.window_name, self.org_frame)
+        imshow(self.window_name, self.frame)
 
-        self.play = False
-        self.tracker = None
-        self.rect = None
-        self.label = ""
-
-        self.dynamic_rect = Selector(self.window_name)
-        self.dynamic_rect.on_selecting = self.on_selecting
-        self.dynamic_rect.on_selected = self.on_selected
+        self.selector = Selector(self.window_name)
+        self.selector.on_selecting = self.on_selecting
+        self.selector.on_selected = self.on_selected
 
         self.meter = TickMeter()
 
     def update(self):
-        self.meter.start()
-        if self.play:
-            ok, self.org_frame = self.capture.read()
+        if not self.state.paused:
+            ok, self.frame = self.capture.read()
             if not ok:
-                raise Exception("The capture could not be read")
-            if self.tracker:
-                ok, self.rect = self.tracker.update(self.org_frame)
-                if not ok:
-                    self.rect = None
+                return self._close()
+            for tracking_object in self.state.tracking_objects:
+                tracking_object.update(self.frame)
+            if self.writer:
+                self.writer.write(self.hud.render_output(self.frame))
 
-        frame = copy(self.org_frame)
-
-        if self.rect:
-            x, y, w, h = self.rect
-            p1 = (int(x), int(y))
-            p2 = (int(x + w), int(y + h))
-            rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
-            putText(frame, self.label, (p2[0] + 5, p1[1] + 5), FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-        elif not self.tracker and self.dynamic_rect.points[0] != self.dynamic_rect.points[1]:
-            rectangle(frame, self.dynamic_rect.points[0], self.dynamic_rect.points[1], (0, 255, 0), 2, 1)
-
-        imshow(self.window_name, frame)
-
-        if self.play and self.writer:
-            frame2 = copy(self.org_frame)
-            if self.rect:
-                x, y, w, h = self.rect
-                p1 = (int(x), int(y))
-                p2 = (int(x + w), int(y + h))
-                rectangle(frame2, p1, p2, (255, 0, 0), 2, 1)
-                putText(frame2, self.label, (p2[0] + 5, p1[1] + 5), FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-            self.writer.write(frame2)
+        imshow(self.window_name, self.hud.render(self.frame))
 
         self.meter.stop()
-        wait_ms = max(1, 1000.0 / self.fps - self.meter.getTimeMilli())
+        self.state.fps = 1 / (self.meter.getTimeSec() or 1)
+        wait_ms = max(1, 1000.0 / self.state.target_fps - self.meter.getTimeMilli())
         self.meter.reset()
+        self.meter.start()
 
         key = waitKey(int(wait_ms)) & 0xff
-        if key == 27:
-            self.capture.release()
-            if self.writer:
-                self.writer.release()
-            return -1
-        elif key == 32:
-            self.play = not self.play
-        elif key == 83:
-            self.fps = self.fps * 2
-        elif key == 81:
-            self.fps = self.fps / 2
+        if key == 255:
+            pass
+        elif len(self.state.tracking_objects) > 0 and self.state.tracking_objects[-1].label_typing_in_progress:
+            if key == 27:  # ESC
+                self.state.tracking_objects[-1].label = ""
+                self.state.tracking_objects[-1].label_typing_in_progress = False
+            elif key == 13:  # ENTER
+                self.state.tracking_objects[-1].label_typing_in_progress = False
+            else:
+                self.state.tracking_objects[-1].label += chr(key)
+        elif key == 27:  # ESC
+            return self._close()
+        elif key == 32:  # SPACE
+            self.state.paused = not self.state.paused
+        elif key == 81:  # LARROW
+            self.state.target_fps = self.state.target_fps / 2
+        elif key == 83:  # RARROW
+            self.state.target_fps = self.state.target_fps * 2
 
     def on_selecting(self, rect):
-        self.tracker = None
-        self.rect = None
+        self.state.selection = rect
 
     def on_selected(self, rect):
-        self.tracker = TrackerKCF_create()
-        self.tracker.init(self.org_frame, rect)
-        self.rect = rect
+        if rect[2] != 0 or rect[3] != 0:
+            self.state.tracking_objects += [TrackingObject(self.frame, rect)]
+        self.state.selection = None
+
+    def _close(self):
+        self.capture.release()
+        if self.writer:
+            self.writer.release()
+        return -1
