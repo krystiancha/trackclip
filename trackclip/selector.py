@@ -1,7 +1,7 @@
 import cv2
 
 
-class DragSelection:
+class Selector:
     window_name: str
     dragging: bool
 

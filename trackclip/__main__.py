@@ -2,7 +2,7 @@ import argparse
 import sys
 
 
-from trackclip.tracker_player import TrackerPlayer
+from trackclip.player import Player
 
 parser = argparse.ArgumentParser(prog="python -m trackclip", description=""
                                              "Annotate videos by adding an automatically moving frame with a label. "
@@ -19,7 +19,7 @@ parser.add_argument('-p', '--pause', action='store_true', help="Don't start play
 parser.add_argument('input', type=str, help="Input filename, can be a video device (ex. /dev/video0)")
 args = parser.parse_args()
 
-player = TrackerPlayer(args.input, args.output, args.codec, "Tracker: {}".format(args.input))
+player = Player(args.input, args.output, args.codec, "Tracker: {}".format(args.input))
 player.label = args.label
 player.play = not args.pause
 

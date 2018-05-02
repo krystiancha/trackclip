@@ -2,10 +2,10 @@ from cv2.cv2 import VideoCapture, imshow, waitKey, rectangle, Tracker, TrackerKC
     FONT_HERSHEY_SIMPLEX, VideoWriter, VideoWriter_fourcc, CAP_PROP_FPS
 from numpy import copy
 
-from trackclip.drag_selection import DragSelection
+from trackclip.selector import Selector
 
 
-class TrackerPlayer:
+class Player:
     writer: VideoWriter
     tracker: Tracker
 
@@ -38,7 +38,7 @@ class TrackerPlayer:
         self.rect = None
         self.label = ""
 
-        self.dynamic_rect = DragSelection(self.window_name)
+        self.dynamic_rect = Selector(self.window_name)
         self.dynamic_rect.on_selecting = self.on_selecting
         self.dynamic_rect.on_selected = self.on_selected
 
