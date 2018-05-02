@@ -7,22 +7,11 @@ from trackclip.utilities import rect_vertices
 
 
 class HUDColors:
-    base03 = (54, 43, 0)
-    base02 = (66, 54, 7)
-    base01 = (117, 110, 88)
-    base00 = (131, 123, 101)
-    base0 = (150, 148, 131)
-    base1 = (161, 161, 147)
-    base2 = (213, 232, 238)
-    base3 = (227, 246, 253)
-    yellow = (0, 137, 181)
-    orange = (22, 75, 203)
-    red = (47, 50, 220)
-    magenta = (130, 54, 211)
-    violet = (196, 113, 108)
-    blue = (201, 139, 38)
-    cyan = (152, 161, 42)
-    green = (0, 153, 133)
+    yellow = (0, 255, 255)
+    red = (0, 0, 255)
+    blue = (255, 0, 0)
+    cyan = (255, 255, 0)
+    green = (0, 255, 0)
 
 
 class HUD:
