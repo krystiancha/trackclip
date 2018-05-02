@@ -55,13 +55,16 @@ class HUD:
 
         return frame
 
-    def render_output(self, frame):
+    def render_output(self, org_frame):
+        frame = copy(org_frame)
+
         tracking_object: TrackingObject
         for idx, tracking_object in enumerate(self.player_state.tracking_objects):
             if tracking_object.rect:
                 p1, p2, p3, p4 = rect_vertices(tracking_object.rect, integers=True)
                 rectangle(frame, p1, p3, self.colors.blue, 2, 1)
                 self._put_text(frame, tracking_object.label, p4, self.colors.green)
+        return frame
 
     @staticmethod
     def _put_text(img, text, org, color, font_scale=0.5, font_face=FONT_HERSHEY_DUPLEX, thickness=1, line_type=LINE_AA,
