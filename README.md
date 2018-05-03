@@ -9,7 +9,7 @@ numpy
 opencv-contrib-python
 ```
 
-## Getting Trackclip
+## Getting trackclip
 
 ```bash
 git clone https://github.com/protecto/trackclip.git
@@ -37,3 +37,6 @@ optional arguments:
                         The name of the output file
 ```
 
+## TODO
+- [] implement removing tracking objects
+- [] implement writing in uppercase by pressing SHIFT
