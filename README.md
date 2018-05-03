@@ -38,5 +38,5 @@ optional arguments:
 ```
 
 ## TODO
-- [] implement removing tracking objects
-- [] implement writing in uppercase by pressing SHIFT
+- [ ] implement removing tracking objects
+- [ ] implement writing in uppercase by pressing SHIFT
