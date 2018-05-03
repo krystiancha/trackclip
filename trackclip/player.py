@@ -41,6 +41,8 @@ class Player:
         self.selector.on_selecting = self.on_selecting
         self.selector.on_selected = self.on_selected
 
+        self.label_uppercase = False
+
         self.meter = TickMeter()
 
     def update(self):
@@ -65,13 +67,19 @@ class Player:
         if key == 255:
             pass
         elif len(self.state.tracking_objects) > 0 and self.state.tracking_objects[-1].label_typing_in_progress:
+            print(key)
             if key == 27:  # ESC
                 self.state.tracking_objects[-1].label = ""
                 self.state.tracking_objects[-1].label_typing_in_progress = False
+            elif key == 8:
+                if len(self.state.tracking_objects[-1].label) > 0:
+                    self.state.tracking_objects[-1].label = self.state.tracking_objects[-1].label[:-1]
             elif key == 13:  # ENTER
                 self.state.tracking_objects[-1].label_typing_in_progress = False
-            else:
-                self.state.tracking_objects[-1].label += chr(key)
+            elif key == 229:  # CAPS LOCK
+                self.label_uppercase = not self.label_uppercase
+            elif key in range(32, 127):
+                self.state.tracking_objects[-1].label += chr(key) if not self.label_uppercase else chr(key).upper()
         elif key == 27:  # ESC
             return self._close()
         elif key == 32:  # SPACE
