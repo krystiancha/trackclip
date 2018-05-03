@@ -12,9 +12,7 @@ opencv-contrib-python
 ## Getting trackclip
 
 ```bash
-git clone https://github.com/protecto/trackclip.git
-cd trackclip
-python -m trackclip --help
+pip3 install --user trackclip
 ```
 
 ## Usage
